@@ -11,24 +11,32 @@ models = {
     'stacking_model': joblib.load('stacking_model.pkl')
 }
 
-@app.route('/predict', methods=['POST'])
+
+@app.route('/predict', methods=['GET'])
 def predict():
-    # Example input: {'model': 'model1', 'inputs': [list_of_features]}
-    data = request.json
-    model_choice = data.get('model')
-    input_data = data.get('inputs')
+    # Retrieve query parameters
+    model_choice = request.args.get('model')
+    input_data = request.args.getlist('inputs', type=float)
+    years_to_predict = request.args.get('years', default=5, type=int)
 
     if model_choice not in models:
-        return jsonify({'error': 'Model not found. Choose from Linear Model, Neural Model, Stacking Model.'}), 400
+        return jsonify({'error': f'Model not found. Choose from {", ".join(models.keys())}.'}), 400
 
-    # Process the input data
+    # Prepare the input data
     processed_data = np.array(input_data).reshape(1, -1)
 
-    # Use chosen model for prediction
-    prediction = models[model_choice].predict(processed_data)
+    # List to hold predictions for each year
+    future_predictions = []
 
-    # Return the prediction result
-    return jsonify({'prediction': prediction.tolist()})
+    # Generate predictions for each year
+    for year in range(years_to_predict):
+        prediction = models[model_choice].predict(processed_data)
+        future_predictions.append({f'Year_{year + 1}': prediction.tolist()})
+        # If necessary, update processed_data for subsequent predictions
+
+    # Return predictions
+    return jsonify({'predictions': future_predictions})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
