@@ -4,34 +4,32 @@ import numpy as np
 
 app = Flask(__name__)
 
-# Load pre-trained models
-lr_model = joblib.load('lr_model.pkl')
-mlp_model = joblib.load('mlp.pkl')
-stacking_model = joblib.load('stacking_model.pkl')
+# Load models
+models = {
+    'model1': joblib.load('model1.pkl'),
+    'model2': joblib.load('model2.pkl'),
+    'model3': joblib.load('model3.pkl')
+}
 
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Extract data from request
+    # Example input: {'model': 'model1', 'inputs': [list_of_features]}
     data = request.json
-    features = np.array(data['features']).reshape(1, -1)
+    model_choice = data.get('model')
+    input_data = data.get('inputs')
 
-    # Make predictions
-    prediction_lr = lr_model.predict(features)
-    prediction_mlp = mlp_model.predict(features)
-    prediction_stacking = stacking_model.predict(features)
+    if model_choice not in models:
+        return jsonify({'error': 'Model not found. Choose from model1, model2, model3.'}), 400
 
-    # Return predictions as JSON
-    return jsonify({
-        'Linear Regression Prediction': prediction_lr.tolist(),
-        'MLP Prediction': prediction_mlp.tolist(),
-        'Stacking Regressor Prediction': prediction_stacking.tolist()
-    })
+    # Process the input data
+    processed_data = np.array(input_data).reshape(1, -1)
 
-@app.route('/')
-def home():
-    return "Hello, World!"
+    # Use chosen model for prediction
+    prediction = models[model_choice].predict(processed_data)
+
+    # Return the prediction result
+    return jsonify({'prediction': prediction.tolist()})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-
+    app.run(host='0.0.0.0', port=5000, debug=True)
