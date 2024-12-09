@@ -1,33 +1,33 @@
 from flask import Flask, request, jsonify
 import joblib
+import numpy as np
 
-# Initialize Flask application
 app = Flask(__name__)
 
-# Load pre-trained models (ensure that the models are saved as .pkl files)
-lr_model = joblib.load('lr_model.pkl')  # Linear Regression Model
-mlp_model = joblib.load('mlp_model.pkl')  # Neural Network Model
-stacking_model = joblib.load('stacking_model.pkl')  # Stacking Regressor Model
+# Load pre-trained models
+lr_model = joblib.load('lr_model.pkl')
+mlp_model = joblib.load('mlp.pkl')
+stacking_model = joblib.load('stacking_model.pkl')
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Get the features from the POST request (expects JSON format with 'features' key)
-    data = request.get_json(force=True)
-    features = [data['features']]  # This should be in the form of a list, e.g., {'features': [value1, value2, ...]}
+    # Extract data from request
+    data = request.json
+    features = np.array(data['features']).reshape(1, -1)
 
-    # Make predictions using the pre-trained models
-    lr_pred = lr_model.predict(features)
-    mlp_pred = mlp_model.predict(features)
-    stacking_pred = stacking_model.predict(features)
+    # Make predictions
+    prediction_lr = lr_model.predict(features)
+    prediction_mlp = mlp_model.predict(features)
+    prediction_stacking = stacking_model.predict(features)
 
-    # Return the predictions in a JSON response
-    response = {
-        'Linear Regression Prediction': lr_pred.tolist(),
-        'Neural Network Prediction': mlp_pred.tolist(),
-        'Stacking Regressor Prediction': stacking_pred.tolist()
-    }
+    # Return predictions as JSON
+    return jsonify({
+        'Linear Regression Prediction': prediction_lr.tolist(),
+        'MLP Prediction': prediction_mlp.tolist(),
+        'Stacking Regressor Prediction': prediction_stacking.tolist()
+    })
 
-    return jsonify(response)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
