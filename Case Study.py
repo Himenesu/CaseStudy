@@ -221,38 +221,3 @@ plt.show()
 joblib.dump(lr_model, 'lr_model.pkl')
 joblib.dump(mlp, 'mlp.pkl')
 joblib.dump(stacking_model, 'stacking_model.pkl')
-
-# Initialize the Flask app
-app = Flask(__name__)
-
-# Load pre-trained models
-lr_model = joblib.load('lr_model.pkl')
-mlp = joblib.load('mlp.pkl')
-stacking_model = joblib.load('stacking_model.pkl')
-
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    # Get data from POST request
-    data = request.get_json(force=True)
-
-    # Extract features (expecting a JSON object with 'features' key)
-    features = [data['features']]  # Features should be in the format: {'features': [val1, val2, ...]}
-
-    # Predictions
-    lr_pred = lr_model.predict(features)
-    mlp_pred = mlp.predict(features)
-    stacking_pred = stacking_model.predict(features)
-
-    # Return predictions as a JSON response
-    response = {
-        'Linear Regression Prediction': lr_pred.tolist(),
-        'Neural Network Prediction': mlp_pred.tolist(),
-        'Stacking Regressor Prediction': stacking_pred.tolist()
-    }
-
-    return jsonify(response)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
